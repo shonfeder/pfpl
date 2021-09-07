@@ -1,2 +1,3 @@
 (library
- (name pfpl))
+ (name lib)
+ (libraries um-abt))

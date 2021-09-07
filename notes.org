@@ -1,0 +1,6 @@
+#+TITLE: Notes
+
+* References
+
+- PFP :: https://books.google.ca/books/about/Practical_Foundations_for_Programming_La.html?id=J2KcCwAAQBAJ&source=kp_book_description&redir_esc=y
+- PFPL Supplement on interpreters :: https://www.cs.cmu.edu/~rwh/pfpl/supplements/interpreters.pdf
