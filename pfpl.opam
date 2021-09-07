@@ -2,16 +2,17 @@
 opam-version: "2.0"
 synopsis: "A short synopsis"
 description: "A longer description"
-maintainer: ["Maintainer Name"]
-authors: ["Author Name"]
-license: "LICENSE"
-tags: ["topics" "to describe" "your" "project"]
-homepage: "https://url/to/home/page"
-doc: "https://url/to/documentation"
-bug-reports: "https://url/to/issue/tracker"
+maintainer: ["Shon Feder <shon.feder@gmail.com>"]
+authors: ["Shon Feder <shon.feder@gmail.com>"]
+license: "MIT"
+tags: ["plt" "experimental"]
+homepage: "TODO"
+doc: "TODO"
+bug-reports: "TODO"
 depends: [
   "ocaml"
   "dune" {>= "2.8"}
+  "um-abt" {>= "0.1.5"}
   "odoc" {with-doc}
 ]
 build: [
@@ -28,4 +29,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://github.com/username/reponame.git"
+dev-repo: "git+https://github.com/shonfeder/pfpl.git"
