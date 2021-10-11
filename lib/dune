@@ -1,3 +1,4 @@
 (library
  (name lib)
- (libraries um-abt))
+ (libraries um-abt)
+ (preprocess (pps ppx_deriving.std ppx_sexp_conv)))
