@@ -12,7 +12,8 @@ bug-reports: "TODO"
 depends: [
   "ocaml"
   "dune" {>= "2.8"}
-  "um-abt" {>= "0.1.5"}
+  "um-abt" {>= "0.1.7" & <= "0.2"}
+  "sexplib" {>= "v0.14.0" & <= "v0.15.0"}
   "odoc" {with-doc}
 ]
 build: [

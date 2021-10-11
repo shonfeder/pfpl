@@ -17,7 +17,11 @@
  (name pfpl)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml dune (um-abt (>= 0.1.5)))
+ (depends
+   ocaml
+   dune
+  (um-abt (and (>= 0.1.7) (<= 0.2)))
+  (sexplib (and (>= v0.14.0) (<= v0.15.0))))
  (tags
   (plt experimental)))
 
