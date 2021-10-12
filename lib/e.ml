@@ -1,3 +1,5 @@
+(** Ex. 4.2 *)
+
 module Typ = struct
   module O = struct
     type 'a t =
@@ -30,17 +32,20 @@ module Exp = struct
       | Times of 'a * 'a
       | Cat of 'a * 'a
       | Len of 'a
-      | Let of 'a * 'a
+      | Let of 'a * Typ.t * 'a
+      | Annot of 'a * Typ.t
     [@@deriving sexp, fold, eq, map]
 
     let to_string = function
-      | Num n        -> string_of_int n
-      | Str s        -> s
-      | Plus (m, n)  -> Printf.sprintf "(%s + %s)" m n
-      | Times (m, n) -> Printf.sprintf "(%s * %s)" m n
-      | Cat (s, s')  -> Printf.sprintf "(%s ++ %s)" s s'
-      | Len s        -> Printf.sprintf "len(%s)" s
-      | Let (v, bnd) -> Printf.sprintf "let %s =: %s" v bnd
+      | Num n           -> string_of_int n
+      | Str s           -> s
+      | Plus (m, n)     -> Printf.sprintf "(%s + %s)" m n
+      | Times (m, n)    -> Printf.sprintf "(%s * %s)" m n
+      | Cat (s, s')     -> Printf.sprintf "(%s ++ %s)" s s'
+      | Len s           -> Printf.sprintf "len(%s)" s
+      | Let (v, t, bnd) ->
+          Printf.sprintf "let %s : %s =: %s" v (Typ.to_string t) bnd
+      | Annot (e, t)    -> Printf.sprintf "%s : %s" e (Typ.to_string t)
   end
 
   include Abt.Make (O)
@@ -58,98 +63,71 @@ module Exp = struct
 
   let len s = op (Len s)
 
-  let let_ ~var ~value exp = Let (value, var#.exp)
+  let let_ ~var ~typ ~value exp = op @@ Let (value, typ, var#.exp)
+
+  let annot exp typ = op (Annot (exp, typ))
 end
 
-module Judgment = struct
-  module O = struct
-    open Sexplib.Std
+module Statics = struct
+  module Ctx = struct
+    include Abt.Var.Map
+    (** Context is a map from variables to types *)
 
-    type 'a t =
-      | Typ of typing
-      | Hyp of 'a hypothetical
-    [@@deriving sexp, eq, map, fold]
-
-    and typing =
-      { exp : Exp.t
-      ; typ : Typ.t
-      }
-
-    and 'a hypothetical =
-      { ant : 'a list
-      ; con : 'a
-      }
-
-    let to_string = function
-      | Typ { exp; typ } -> Exp.to_string exp ^ ": " ^ Typ.to_string typ
-      | Hyp { ant; con } -> String.concat ", " ant ^ " |- " ^ con
+    type t = Typ.t Abt.Var.Map.t
   end
 
-  include Abt.Make (O)
+  exception Type_error of Ctx.t * Exp.t * Typ.t * Typ.t
+
+  exception Invalid_rule of string * Exp.t
+
+  exception Untyped_var of Abt.Var.t
+
+  let rec check : Ctx.t -> Exp.t -> Typ.t -> unit =
+   fun ctx exp typ ->
+    let assert_ exp typ =
+      let typ' = synthesize ctx exp in
+      if Typ.equal typ' typ then
+        ()
+      else
+        raise (Type_error (ctx, exp, typ, typ'))
+    in
+    match (exp, typ) with
+    | Opr (Str _), Opr Str
+    | Opr (Num _), Opr Num ->
+        ()
+    | exp, _ -> assert_ exp typ
+
+  and synthesize : Ctx.t -> Exp.t -> Typ.t =
+   fun ctx -> function
+    | Bnd (_, _) -> failwith "Invalid term"
+    | Var v      -> (
+        try Ctx.find v ctx with
+        | Not_found -> raise (Untyped_var v))
+    | Opr op     ->
+    match op with
+    | Num _ -> Typ.num
+    | Str _ -> Typ.str
+    | Plus (e1, e2)
+    | Times (e1, e2) ->
+        check ctx e1 Typ.num;
+        check ctx e2 Typ.num;
+        Typ.num
+    | Cat (e1, e2) ->
+        check ctx e1 Typ.str;
+        check ctx e2 Typ.str;
+        Typ.str
+    | Len e ->
+        check ctx e Typ.str;
+        Typ.num
+    | Let (e1, t1, Bnd (bnd, e2)) ->
+        let v = Abt.Var.of_binding bnd in
+        check ctx e1 t1;
+        let ctx' = Ctx.add v t1 ctx in
+        let t2 = synthesize ctx' e2 in
+        check ctx' e2 t2;
+        t2
+    | Let _ -> failwith "Invalid term"
+    | Annot (e, t) ->
+        check ctx e t;
+        t
 end
-
-module Rule = struct
-  module O = struct
-    open Sexplib.Std
-
-    type 'a t =
-      | Inf of 'a inference
-      | Drv of 'a derivation
-
-    and 'a inference =
-      { prem : Judgment.t list
-      ; conc : Judgment.t
-      }
-
-    and 'a derivation =
-      { infs: 'a
-      ; }
-  end
-end
-(* module Judgment = struct
- *   type typ = Exp.t * Typ.t
- *
- *   type hyp = typ list -> typ option
- *
- *   type t =
- *     | Typ of typ
- *     | Hyp of hyp
- *
- *   let typ e t = (e, t)
- *
- *   let ( let* ) = Option.bind
- *
- *   let unif (e, t) (e', t') =
- *     let* eu = Exp.Unification.(e =.= e') |> Result.to_option in
- *     let* tu = Typ.Unification.(t =.= t') |> Result.to_option in
- *     Some (eu, tu)
- *
- *   let select : typ list -> typ -> (typ list * typ) option =
- *    fun ctx typ ->
- *     let* typ' = List.find_map (unif typ) ctx in
- *     let ctx' = List.filter (fun x -> not (unif typ' x |> Option.is_some)) ctx in
- *     Some (ctx', typ')
- * end
- *
- * module Rule = struct
- *   (\** [ctx.?{typ}] is [Some ctx'] when a typing judgmnet that matches [type]  by
- *       unification is in [ctx] and [ctx'] is [ctx] without [typ]. This expresses
- *       the idiom used in sequent calculus [G,x:t], which separates [x:t] from the
- *       context [G] *\)
- *   let ( .?{} ) ctx t = Judgment.select ctx t
- *
- *   type t = Judgment.hyp list * Judgment.hyp
- *
- *   type inference =
- *     { premises : Judgment.hyp list
- *     ; conclusion : Judgment.hyp
- *     }
- *
- *   (\* type derivation = {derivs: derivation list; conclusion: } *\)
- *
- *   let id : t =
- *     ( []
- *     , fun ctx ->
- *         let x_t = Judgment.typ (Exp.v "x") (Typ.v "t") in
- *         ctx.?{x_t} |> Option.map snd )
- * end *)
