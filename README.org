@@ -1,11 +1,18 @@
 #+TITLE: Experiments while working through PFPL
 
+This repo holds experiments, notes, and exercises produced while working through
+Robert Harper's [[http://www.cs.cmu.edu/~rwh/pfpl/][Practical Foundations for Programming Languages]] (PFPL) (2nd
+ed.).
+
 * Contents
 
 ** Chapter 1
 
 - See my ABT library, [[https://github.com/shonfeder/um-abt][um-abt]].
 
+** Chatpers 2 and 3
+
+- See file:./notes.org
 ** Chapters 4 and 5
 
 Introduction to statics and dynamics, using the simple language *E*.

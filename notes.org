@@ -1,5 +1,16 @@
 #+TITLE: Notes
 
+* Notes
+** TODO On judgments and deductions
+Chapter 1, which introduces ABTs, as the presentation of the *elements*. This
+sets out the content of our cognitions about programming languages.
+
+Chapters 2 and 3 set out the core logic.
+* Tasks
+** TODO Inference as ABT
+** TODO Deduction defined on top of this syntax
+It's the evaluation strategy?
+
 * References
 
 - PFP :: https://books.google.ca/books/about/Practical_Foundations_for_Programming_La.html?id=J2KcCwAAQBAJ&source=kp_book_description&redir_esc=y
