@@ -12,10 +12,11 @@ ed.).
 
 ** Chatpers 2 and 3
 
-- See file:./notes.org
+- See [[file:notes.org][./notes.org]]
+
 ** Chapters 4 and 5
 
 Introduction to statics and dynamics, using the simple language *E*.
 
-- E :: file:./lib/e_min.ml
-- E with annotations, per ex. 4.2 :: file:./lib/e.ml
+- E :: [[file:lib/e_min.ml][./lib/e_min.ml]]
+- E with annotations, per ex. 4.2 :: [[file:lib/e.ml][./lib/e.ml]]
