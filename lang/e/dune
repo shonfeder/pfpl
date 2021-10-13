@@ -1,0 +1,10 @@
+(library
+ (name        e_lang)
+ (libraries um-abt)
+ (preprocess (pps ppx_deriving.std ppx_sexp_conv)))
+
+(menhir
+ (modules parser)
+ (flags "--explain"))
+
+(ocamllex lexer)
