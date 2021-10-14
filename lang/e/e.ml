@@ -74,6 +74,13 @@ module Statics = struct
     (** Context is a map from variables to types *)
 
     type t = Typ.t Abt.Var.Map.t
+
+    let to_string : t -> string =
+     fun t ->
+      to_seq t
+      |> List.of_seq
+      |> List.map (fun (k, v) -> Abt.Var.to_string k ^ " : " ^ Typ.to_string v)
+      |> String.concat "\n"
   end
 
   exception Type_error of Ctx.t * Exp.t * Typ.t * Typ.t
@@ -131,3 +138,8 @@ module Statics = struct
         check ctx e t;
         t
 end
+
+let typecheck : Exp.t -> unit =
+ fun exp ->
+  let _typ = Statics.(synthesize Ctx.empty exp) in
+  ()
