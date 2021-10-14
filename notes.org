@@ -2,13 +2,16 @@
 
 * Notes
 ** TODO On judgments and deductions
-Chapter 1, which introduces ABTs, as the presentation of the *elements*. This
+Taking a quasi-kantian perspective (which is not inappropriate, given the kantian
+tendencies of Martin-Löf's project): the ABTs introduced in Chapter 1 are akin
+to the , is the presentation of the . This
 sets out the content of our cognitions about programming languages.
 
 Chapters 2 and 3 set out the core logic.
 * Tasks
-** TODO Inference as ABT
-** TODO Deduction defined on top of this syntax
+*** TODO Add mdx tests for e
+*** TODO Inference as ABT
+*** TODO Deduction defined on top of this syntax
 It's the evaluation strategy?
 
 * References
