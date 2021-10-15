@@ -14,4 +14,8 @@
  (modules parser)
  (flags "--explain"))
 
+(mdx
+ (files README.md)
+ (packages pfpl))
+
 (ocamllex lexer)

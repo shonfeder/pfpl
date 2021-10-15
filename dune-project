@@ -2,6 +2,7 @@
 (generate_opam_files true)
 
 (using menhir 2.0)
+(using mdx 0.1)
 
 (name pfpl)
 
@@ -27,4 +28,4 @@
  (tags
   (plt experimental)))
 
-; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project
+ ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project

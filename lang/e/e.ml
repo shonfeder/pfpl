@@ -10,8 +10,8 @@ module Typ = struct
 
     let to_string = function
       | Bot _ -> failwith "impossible"
-      | Num   -> "num"
-      | Str   -> "str"
+      | Num   -> "Num"
+      | Str   -> "Str"
   end
 
   include Abt.Make (O)
@@ -87,7 +87,7 @@ module Statics = struct
 
   exception Invalid_rule of string * Exp.t
 
-  exception Untyped_var of Abt.Var.t
+  exception Unbound_var of Abt.Var.t
 
   let rec check : Ctx.t -> Exp.t -> Typ.t -> unit =
    fun ctx exp typ ->
@@ -109,7 +109,7 @@ module Statics = struct
     | Bnd (_, _) -> failwith "Invalid term"
     | Var v      -> (
         try Ctx.find v ctx with
-        | Not_found -> raise (Untyped_var v))
+        | Not_found -> raise (Unbound_var v))
     | Opr op     ->
     match op with
     | Num _ -> Typ.num
