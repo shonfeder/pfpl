@@ -6,17 +6,12 @@ ed.).
 
 * Contents
 
-** Chapter 1
 
-- See my ABT library, [[https://github.com/shonfeder/um-abt][um-abt]].
-
-** Chatpers 2 and 3
-
-- See [[file:notes.org][./notes.org]]
-
-** Chapters 4 and 5
-
-Introduction to statics and dynamics, using the simple language *E*.
-
-- E :: [[file:lib/e_min.ml][./lib/e_min.ml]]
-- E with annotations, per ex. 4.2 :: [[file:lib/e.ml][./lib/e.ml]]
+- Chapter 1 ::
+  - ASTs and ABTS
+  - See my ABT library, [[https://github.com/shonfeder/um-abt][um-abt]]
+- Chapters 2 and 3 ::
+  - See [[file:notes.org][./notes.org]]
+- Chapters 4 and 5 ::
+  - Introduction to statics and dynamics, using the simple language *E*.
+  - See [[file:lang/e/README.md][my tested notes]].
