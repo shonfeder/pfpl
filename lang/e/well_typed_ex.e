@@ -8,4 +8,4 @@ let a : Str = "foo" in
 
 let b : Str = "bar" in
 
-a ++ b
+a ++ " " ++ b

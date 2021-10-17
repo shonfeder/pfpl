@@ -139,6 +139,59 @@ module Statics = struct
         t
 end
 
+(* Section 5.2 *)
+module Dynamics = struct
+  exception Illformed of Exp.t
+
+  let is_value : Exp.t -> bool = function
+    | Opr (Num _)
+    | Opr (Str _) ->
+        true
+    | _ -> false
+
+  let rec eval : Exp.t -> Exp.t =
+   fun exp ->
+    match exp with
+    | Opr (Num _)
+    | Opr (Str _) ->
+        exp
+    | Opr (Plus (n1, n2)) -> plus (eval n1, eval n2)
+    | Opr (Times (n1, n2)) -> times (eval n1, eval n2)
+    | Opr (Cat (s1, s2)) -> cat (eval s1, eval s2)
+    | Opr (Len s) -> len (eval s)
+    | Opr (Annot (e, _)) -> eval e
+    | Opr (Let (value, _, bnd)) -> eval (let_ (eval value) bnd)
+    | Var _
+    | Bnd (_, _) ->
+        raise (Illformed exp)
+
+  and plus = function
+    | Opr (Num n1), Opr (Num n2) -> Exp.num (n1 + n2)
+    | Opr (Num _), e
+    | e, _ ->
+        raise (Illformed e)
+
+  and times = function
+    | Opr (Num n1), Opr (Num n2) -> Exp.num (n1 * n2)
+    | Opr (Num _), e
+    | e, _ ->
+        raise (Illformed e)
+
+  and cat = function
+    | Opr (Str s1), Opr (Str s2) -> Exp.str (s1 ^ s2)
+    | Opr (Num _), e
+    | e, _ ->
+        raise (Illformed e)
+
+  and len = function
+    | Opr (Str s) -> Exp.num (String.length s)
+    | e           -> raise (Illformed e)
+
+  and let_ = fun value -> function
+    | Bnd (bnd, exp) -> Exp.subst ~value bnd exp
+    | e -> raise (Illformed e)
+end
+
 let typecheck : Exp.t -> unit =
  fun exp ->
   let _typ = Statics.(synthesize Ctx.empty exp) in

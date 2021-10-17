@@ -46,12 +46,17 @@ let parse () =
   lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = "stdin" };
   parse_with_error lexbuf
 
+let eval progn =
+  let () = typecheck_with_error progn in
+  E.Dynamics.eval progn |> E.Exp.to_string |> print_endline
+
 let () =
   match Sys.argv.(1) with
   | "typecheck" -> () |> parse |> Option.iter typecheck_with_error
+  | "eval" -> () |> parse |> Option.iter eval
   | cmd ->
       Printf.eprintf "Invalid command: %s\n" cmd;
       exit 1
   | exception Invalid_argument _ ->
-      Printf.printf "Valid commands: typecheck, run\n";
+      Printf.printf "Valid commands: typecheck, eval\n";
       exit 1
