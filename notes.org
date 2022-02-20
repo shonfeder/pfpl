@@ -3,13 +3,21 @@
 * Notes
 ** TODO On judgments and deductions
 Taking a quasi-kantian perspective (which is not inappropriate, given the kantian
-tendencies of Martin-Löf's project): the ABTs introduced in Chapter 1 are akin
-to the , is the presentation of the . This
-sets out the content of our cognitions about programming languages.
+tendencies of Martin-Löf's project): the ABTs introduced in Chapter 1 are
+the spacial manifolds of intuition: they give the condition of possibility for
+the simultaneous appearance of representations (atomic terms). The selection of evaluation
+system (transition systems here), are a selection of the temporal manifold: they
+give the condition of possibility for the sequential appearance of
+representations.
 
-Chapters 2 and 3 set out the core logic.
+These together set out the content of our cognitions about programming
+languages.
+
+Chapters 2 and 3 set out the core logic, i.e., the way concepts are formed.
 * Tasks
-*** TODO Add mdx tests for e
+*** DONE Add mdx tests for e
+*** TODO Theorem 6.1 - Type Safety for E
+- [ ] Implement PBTs for type both properties.
 *** TODO Inference as ABT
 *** TODO Deduction defined on top of this syntax
 It's the evaluation strategy?
