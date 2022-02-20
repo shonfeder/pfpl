@@ -31,13 +31,13 @@ let prog :=
   | ~ = exp ; EOF; < Some >
 
 let exp :=
-  | ~ = paren(exp) ; <>
-  | ~ = let_       ; <>
-  | ~ = atom       ; <>
-  | ~ = unop       ; <>
-  | ~ = binop      ; <>
-  | ~ = annot      ; <>
-  | x = VAR        ; < v >
+  | paren(exp)
+  | let_
+  | atom
+  | unop
+  | binop
+  | annot
+  | x = VAR ; < v >
 
 let paren(exp) :=
   | "(" ; ~ = exp ; ")" ; <>
