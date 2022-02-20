@@ -11,7 +11,7 @@ doc: "TODO"
 bug-reports: "TODO"
 depends: [
   "ocaml"
-  "dune" {>= "2.8"}
+  "dune" {>= "3.0"}
   "menhir"
   "um-abt" {>= "0.1.7" & <= "0.2"}
   "sexplib" {>= "v0.14.0" & <= "v0.15.0"}

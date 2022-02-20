@@ -1,8 +1,8 @@
-(lang dune 2.8)
+(lang dune 3.0)
 (generate_opam_files true)
 
 (using menhir 2.0)
-(using mdx 0.1)
+(using mdx 0.2)
 
 (name pfpl)
 
