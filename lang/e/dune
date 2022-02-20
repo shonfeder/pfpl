@@ -16,6 +16,6 @@
 
 (mdx
  (files README.md)
- (packages pfpl))
+ (deps ill_typed_ex.e well_typed_ex.e))
 
 (ocamllex lexer)

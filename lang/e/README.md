@@ -11,11 +11,11 @@ An example of a syntactically correct and well-typed program:
 
 ```sh
 $ cat ./well_typed_ex.e
-let z : Num = (
+let z : Num =
     let x : Num = 2 in
     let y : Num = 3 in
     x + (y + 5)
-) in
+in
 
 let a : Str = "foo" in
 
