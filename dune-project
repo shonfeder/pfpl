@@ -23,6 +23,7 @@
  (depends
   ocaml
   dune
+  menhir
   (um-abt (and (>= 0.1.7) (<= 0.2)))
   (sexplib (and (>= v0.14.0) (<= v0.15.0)))
   ; test deps
