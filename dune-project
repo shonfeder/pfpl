@@ -28,7 +28,7 @@
   (sexplib (and (>= v0.14.0) (<= v0.15.0)))
 
   ; test deps
-  (qcheck-alcotest (and :with-test (>= 0.18) (< 0.19)))
+  (qcheck (and :with-test (>= 0.18) (< 0.19)))
   (mdx (and :with-test (>= 2.1.0) (< 2.2.0))))
  (tags
   (plt experimental)))

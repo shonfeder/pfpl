@@ -15,7 +15,7 @@ depends: [
   "menhir"
   "um-abt" {>= "0.1.7" & <= "0.2"}
   "sexplib" {>= "v0.14.0" & <= "v0.15.0"}
-  "qcheck-alcotest" {with-test & >= "0.18" & < "0.19"}
+  "qcheck" {with-test & >= "0.18" & < "0.19"}
   "mdx" {with-test & >= "2.1.0" & < "2.2.0"}
   "odoc" {with-doc}
 ]
