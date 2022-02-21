@@ -26,8 +26,10 @@
   menhir
   (um-abt (and (>= 0.1.7) (<= 0.2)))
   (sexplib (and (>= v0.14.0) (<= v0.15.0)))
+
   ; test deps
-  (mdx (and (>= 2.1.0) (< 2.2.0)  :with-test)))
+  (qcheck-alcotest (and :with-test (>= 0.18) (< 0.19)))
+  (mdx (and :with-test (>= 2.1.0) (< 2.2.0))))
  (tags
   (plt experimental)))
 
