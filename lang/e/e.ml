@@ -17,7 +17,6 @@ module Typ = struct
   include Abt.Make (O)
 
   let num = op O.Num
-
   let str = op O.Str
 end
 
@@ -38,7 +37,7 @@ module Exp = struct
 
     let to_string = function
       | Num n           -> string_of_int n
-      | Str s           -> s
+      | Str s           -> Printf.sprintf "%S" s
       | Plus (m, n)     -> Printf.sprintf "(%s + %s)" m n
       | Times (m, n)    -> Printf.sprintf "(%s * %s)" m n
       | Cat (s, s')     -> Printf.sprintf "(%s ++ %s)" s s'
@@ -52,19 +51,12 @@ module Exp = struct
   open O
 
   let num n = op (Num n)
-
   let str s = op (Str s)
-
   let plus a b = op (Plus (a, b))
-
   let times a b = op (Times (a, b))
-
   let cat s s' = op (Cat (s, s'))
-
   let len s = op (Len s)
-
   let let_ ~var ~typ ~value exp = op @@ Let (value, typ, var#.exp)
-
   let annot exp typ = op (Annot (exp, typ))
 end
 
@@ -84,9 +76,6 @@ module Statics = struct
   end
 
   exception Type_error of Ctx.t * Exp.t * Typ.t * Typ.t
-
-  exception Invalid_rule of string * Exp.t
-
   exception Unbound_var of Abt.Var.t
 
   let rec check : Ctx.t -> Exp.t -> Typ.t -> unit =
@@ -161,9 +150,8 @@ module Dynamics = struct
     | Opr (Len s) -> len (eval s)
     | Opr (Annot (e, _)) -> eval e
     | Opr (Let (value, _, bnd)) -> eval (let_ (eval value) bnd)
-    | Var _
-    | Bnd (_, _) ->
-        raise (Illformed exp)
+    | Var v -> raise (Statics.Unbound_var v)
+    | Bnd (_, _) -> raise (Illformed exp)
 
   and plus = function
     | Opr (Num n1), Opr (Num n2) -> Exp.num (n1 + n2)
@@ -187,12 +175,12 @@ module Dynamics = struct
     | Opr (Str s) -> Exp.num (String.length s)
     | e           -> raise (Illformed e)
 
-  and let_ = fun value -> function
+  and let_ value = function
     | Bnd (bnd, exp) -> Exp.subst ~value bnd exp
-    | e -> raise (Illformed e)
+    | e              -> raise (Illformed e)
 end
 
 let typecheck : Exp.t -> unit =
  fun exp ->
-  let _typ = Statics.(synthesize Ctx.empty exp) in
+  let _type = Statics.(synthesize Ctx.empty exp) in
   ()
