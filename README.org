@@ -15,3 +15,6 @@ ed.).
 - Chapters 4 and 5 ::
   - Introduction to statics and dynamics, using the simple language *E*.
   - See [[file:lang/e/README.md][my tested notes]].
+- Chapter 6 ::
+  - Type Safety
+  - See the [[file:lang/e/test/test.ml][property based tests for E]].

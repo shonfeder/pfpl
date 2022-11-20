@@ -16,8 +16,9 @@ languages.
 Chapters 2 and 3 set out the core logic, i.e., the way concepts are formed.
 * Tasks
 *** DONE Add mdx tests for e
-*** DONE Theorem 6.1 - Type Safety for E
+*** TODO Theorem 6.1 - Type Safety for E
 - [X] Implement PBTs for type both properties.
+- [ ] Prove theorems
 *** TODO Inference as ABT
 *** TODO Deduction defined on top of this syntax
 It's the evaluation strategy?
