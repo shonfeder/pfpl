@@ -48,7 +48,7 @@ let parse () =
 
 let eval progn =
   let () = typecheck_with_error progn in
-  E.Dynamics.eval progn |> E.Exp.to_string |> print_endline
+  E.Dynamics.(eval progn) |> E.Exp.to_string |> print_endline
 
 let () =
   match Sys.argv.(1) with

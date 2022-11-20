@@ -30,17 +30,18 @@ let () =
           has_type e t
           ==>
           match Dynamics.eval e with
-          | e' -> has_type e' t
+          | Val e' | Err e' -> has_type e' t
           | exception Dynamics.Illformed _ -> false)
     ; property
-        "Theorm 6.1: Type safety (2) -- If e : τ, then either e val, or there \
-         exists e' such that e ~> e'"
+        "Theorm 6.5: Type safety (2) -- If e : τ, then either e err, or e val, \
+         or there exists e' such that e ~> e'"
         (pair Prog.arbitrary_exp Prog.arbitrary_typ)
         (fun (e, t) ->
           has_type e t
           ==> (is_val e
               ||
               match Dynamics.eval e with
-              | _e' -> true
+              | Val _e' -> true
+              | Err _err -> true
               | exception Dynamics.Illformed _ -> false))
     ]

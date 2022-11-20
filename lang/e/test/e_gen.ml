@@ -29,7 +29,11 @@ module Prog = struct
 
   let exp_var = map Exp.v Var.var_name_gen
   let typ = oneofl Typ.[ num; str ]
-  let value = oneof [ map Exp.num int; map Exp.str Var.var_name_gen ]
+  let value = oneof
+      [ return Exp.(num 0) (* ensure we always try 0 *)
+      ; map Exp.num int
+      ; map Exp.str Var.var_name_gen
+      ]
 
   let exp =
     sized
@@ -40,8 +44,10 @@ module Prog = struct
              frequency
                [ (1, map2 Exp.plus (self n') (self n'))
                ; (1, map2 Exp.times (self n') (self n'))
+               ; (1, map2 Exp.div (self n') (self n'))
                ; (1, map2 Exp.cat (self n') (self n'))
                ; (1, map Exp.len (self n'))
+               ; (1, return Exp.error)
                ; ( 1
                  , fun st ->
                      Exp.let_

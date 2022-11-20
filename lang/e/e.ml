@@ -29,10 +29,12 @@ module Exp = struct
       | Str of string
       | Plus of 'a * 'a
       | Times of 'a * 'a
+      | Div of 'a * 'a (* Sec. 6.3: runtime errors *)
       | Cat of 'a * 'a
       | Len of 'a
       | Let of 'a * Typ.t * 'a
       | Annot of 'a * Typ.t
+      | Error
     [@@deriving sexp, fold, eq, map]
 
     let to_string = function
@@ -40,11 +42,12 @@ module Exp = struct
       | Str s           -> Printf.sprintf "%S" s
       | Plus (m, n)     -> Printf.sprintf "(%s + %s)" m n
       | Times (m, n)    -> Printf.sprintf "(%s * %s)" m n
+      | Div (n, d)      -> Printf.sprintf "(%s / %s)" n d
       | Cat (s, s')     -> Printf.sprintf "(%s ++ %s)" s s'
       | Len s           -> Printf.sprintf "len(%s)" s
-      | Let (v, t, bnd) ->
-          Printf.sprintf "let %s : %s =: %s" v (Typ.to_string t) bnd
+      | Let (v, t, bnd) -> Printf.sprintf "let %s : %s =: %s" v (Typ.to_string t) bnd
       | Annot (e, t)    -> Printf.sprintf "%s : %s" e (Typ.to_string t)
+      | Error           -> Printf.sprintf "error"
   end
 
   include Abt.Make (O)
@@ -54,10 +57,12 @@ module Exp = struct
   let str s = op (Str s)
   let plus a b = op (Plus (a, b))
   let times a b = op (Times (a, b))
+  let div n d = op (Div (n, d))
   let cat s s' = op (Cat (s, s'))
   let len s = op (Len s)
   let let_ ~var ~typ ~value exp = op @@ Let (value, typ, var#.exp)
   let annot exp typ = op (Annot (exp, typ))
+  let error = op Error
 end
 
 module Statics = struct
@@ -89,9 +94,9 @@ module Statics = struct
     in
     match (exp, typ) with
     | Opr (Str _), Opr Str
-    | Opr (Num _), Opr Num ->
-        ()
-    | exp, _ -> assert_ exp typ
+    | Opr (Num _), Opr Num -> ()
+    | Opr Error, _         -> ()
+    | exp, _               -> assert_ exp typ
 
   and synthesize : Ctx.t -> Exp.t -> Typ.t =
    fun ctx -> function
@@ -108,6 +113,10 @@ module Statics = struct
         check ctx e1 Typ.num;
         check ctx e2 Typ.num;
         Typ.num
+    | Div (e1, e2) ->
+      check ctx e1 Typ.num;
+      check ctx e2 Typ.num;
+      Typ.num
     | Cat (e1, e2) ->
         check ctx e1 Typ.str;
         check ctx e2 Typ.str;
@@ -122,10 +131,9 @@ module Statics = struct
         let t2 = synthesize ctx' e2 in
         check ctx' e2 t2;
         t2
+    | Annot (e, t) -> check ctx e t; t
     | Let _ -> failwith "Invalid term"
-    | Annot (e, t) ->
-        check ctx e t;
-        t
+    | Error -> Typ.num (* Type here shouldn't matter *)
 
   (* typechecking succeeds if we can find or construct a type for the expression *)
   let typecheck : Exp.t -> unit =
@@ -136,52 +144,81 @@ end
 
 (* Section 5.2 *)
 module Dynamics = struct
-  exception Illformed of Exp.t
-
   let is_value : Exp.t -> bool = function
     | Opr (Num _)
     | Opr (Str _) ->
         true
     | _ -> false
 
-  let rec eval : Exp.t -> Exp.t =
-   fun exp ->
+
+  type state =
+    | Val of Exp.t
+    | Err of Exp.t
+
+  exception Illformed of Exp.t
+
+  let div n d = match d with
+    | 0 -> Err Exp.(div (num n) (num 0))
+    | n -> Val Exp.(num (n / d))
+
+  let rec eval : Exp.t -> state =
+    fun exp ->
     match exp with
-    | Opr (Num _)
-    | Opr (Str _) ->
-        exp
-    | Opr (Plus (n1, n2)) -> plus (eval n1, eval n2)
-    | Opr (Times (n1, n2)) -> times (eval n1, eval n2)
-    | Opr (Cat (s1, s2)) -> cat (eval s1, eval s2)
-    | Opr (Len s) -> len (eval s)
-    | Opr (Annot (e, _)) -> eval e
-    | Opr (Let (value, _, bnd)) -> eval (let_ (eval value) bnd)
-    | Var v -> raise (Statics.Unbound_var v)
-    | Bnd (_, _) -> raise (Illformed exp)
+    | Opr Error -> Err exp
+    | Opr (Num _) | Opr (Str _) -> Val exp
+    (* "For example, the dynamics need not check, when performing an addition,
+       that its two argument are, in fact numbers ... because the type system
+       ensures that this is the case." (p. 51)  *)
+    | Opr (Plus (n1, n2))       -> begin
+        match eval n1, eval n2 with
+        | Val n1, Val n2 -> Val (Exp.num (num n1 + num n2))
+        | Err e, _ | _, Err e -> Err e
+      end
+    | Opr (Times (n1, n2))      -> begin
+        match eval n1, eval n2 with
+        | Val n1, Val n2 -> Val (Exp.num (num n1 * num n2))
+        | Err e, _ | _, Err e -> Err e
+      end
+    (* "On the other hand, the dynamics for quotient *must* check for a zero
+       divisor, because the type system does not rule out the possibility."
+       (p. 51) *)
+    | Opr (Div (n, d))      -> begin
+        match eval n, eval d with
+        | Val n, Val d -> div (num n) (num d)
+        | Err e, _ | _, Err e -> Err e
+      end
+    | Opr (Cat (s1, s2))    -> begin
+        match eval s1, eval s2 with
+        | Val s1, Val s2 -> Val (Exp.str (str s1 ^ str s2))
+        | Err e, _ | _, Err e -> Err e
+      end
+    | Opr (Len s)           -> begin
+        match eval s with
+        | Val s -> Val (Exp.num (String.length (str s)))
+        | err -> err
+      end
+    | Opr (Annot (e, _))    -> eval e
+    | Opr (Let (e, _, bnd)) -> begin
+        match eval e with
+        | Val v -> eval (let_ v bnd)
+        | err   -> err
+      end
+    | Var v                 -> raise (Statics.Unbound_var v)
+    | Bnd (_, _)            -> raise (Illformed exp)
 
-  and plus = function
-    | Opr (Num n1), Opr (Num n2) -> Exp.num (n1 + n2)
-    | Opr (Num _), e
-    | e, _ ->
-        raise (Illformed e)
-
-  and times = function
-    | Opr (Num n1), Opr (Num n2) -> Exp.num (n1 * n2)
-    | Opr (Num _), e
-    | e, _ ->
-        raise (Illformed e)
-
-  and cat = function
-    | Opr (Str s1), Opr (Str s2) -> Exp.str (s1 ^ s2)
-    | Opr (Num _), e
-    | e, _ ->
-        raise (Illformed e)
-
-  and len = function
-    | Opr (Str s) -> Exp.num (String.length s)
-    | e           -> raise (Illformed e)
+  and value e = match eval e with
+    | Val v -> v
+    | _ -> raise (Illformed e)
 
   and let_ value = function
     | Bnd (bnd, exp) -> Exp.subst ~value bnd exp
     | e              -> raise (Illformed e)
+
+  and num e = match eval e with
+    | Val (Opr (Num n)) -> n
+    | _                 -> raise (Illformed e)
+
+  and str e = match eval e with
+    | Val (Opr (Str str)) -> str
+    | _                   -> raise (Illformed e)
 end
