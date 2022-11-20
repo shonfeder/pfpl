@@ -22,7 +22,7 @@ let parse_with_error lexbuf =
 open E
 
 let typecheck_with_error progn =
-  try typecheck progn with
+  try Statics.typecheck progn with
   | Statics.Unbound_var v ->
       Printf.printf "Unbound variable: %s\n" (Abt.Var.to_string v)
   | Statics.Type_error (ctx, exp, typ, expected_typ) ->

@@ -6,7 +6,7 @@ let count = 5000
 let property name = Test.make ~count ~name
 
 let has_type e t =
-  match typecheck (Exp.annot e t) with
+  match Statics.typecheck (Exp.annot e t) with
   | () -> true
   | (exception Statics.Unbound_var _)
   | (exception Statics.Type_error _) ->

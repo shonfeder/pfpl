@@ -60,5 +60,5 @@ We can evaluate a well typed program
 
 ```sh
 $ e eval < ./well_typed_ex.e
-foo bar
+"foo bar"
 ```

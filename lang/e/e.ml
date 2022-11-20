@@ -126,6 +126,12 @@ module Statics = struct
     | Annot (e, t) ->
         check ctx e t;
         t
+
+  (* typechecking succeeds if we can find or construct a type for the expression *)
+  let typecheck : Exp.t -> unit =
+    fun exp ->
+    let _type = synthesize Ctx.empty exp in
+    ()
 end
 
 (* Section 5.2 *)
@@ -179,8 +185,3 @@ module Dynamics = struct
     | Bnd (bnd, exp) -> Exp.subst ~value bnd exp
     | e              -> raise (Illformed e)
 end
-
-let typecheck : Exp.t -> unit =
- fun exp ->
-  let _type = Statics.(synthesize Ctx.empty exp) in
-  ()
