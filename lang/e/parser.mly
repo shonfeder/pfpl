@@ -1,5 +1,4 @@
-%{
-    open E.Exp
+%{    open E.Exp
 %}
 
 %token <int> NUM
@@ -10,14 +9,19 @@
 %token CAT "++"
 %token LEN
 %token ANNOT ":"
+%token POINT "."
+%token LAMBDA
 %token LET EQ IN
+%token ARROW_T "->"
 %token NUM_T STR_T
 %token OPEN_PAREN "("
 %token CLOSE_PAREN ")"
 %token EOF
 
 %nonassoc IN
+%nonassoc "."
 %nonassoc ":"
+%right "->"
 %left "*"
 %left "+"
 %left "++"
@@ -32,10 +36,12 @@ let prog :=
 
 let exp :=
   | paren(exp)
-  | let_
   | atom
-  | unop
   | binop
+  | unop
+  | let_
+  | lam
+  | app
   | annot
   | x = VAR ; < v >
 
@@ -58,9 +64,18 @@ let let_ :=
   | LET ; var = VAR ; ":" ; ~ = typ ; EQ ; value = exp ; IN ; ~ = exp;
     { let_ ~var ~typ ~value exp }
 
+let lam :=
+  | LAMBDA ; var = VAR ; ":" ; ~ = typ ; POINT ; ~ = exp ;
+    { lam ~var ~typ exp }
+
+let app :=
+  | m = exp ; n = exp ;
+    { app m n }
+
 let annot :=
   | ~ = exp ; ":" ; ~ = typ; { annot exp typ }
 
 let typ :=
   | NUM_T ; { E.Typ.num }
   | STR_T ; { E.Typ.str }
+  | t1 = typ ; "->" ; t2 = typ ; { E.Typ.arr t1 t2 }

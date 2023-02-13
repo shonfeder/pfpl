@@ -8,4 +8,6 @@ let a : Str = "foo" in
 
 let b : Str = "bar" in
 
-a ++ " " ++ b
+let concat_words : Str -> Str -> Str = λ a : Str . λ b : Str . a ++ " " ++ b in
+
+(concat_words a) b

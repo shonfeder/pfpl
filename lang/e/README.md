@@ -1,9 +1,9 @@
-# Chapters 4 and 5
+# Chapters 4-8
 
 Introduction to statics and dynamics, using the simple language *E*.
 
-E has a tiny and trivial set of expressions and types. For which, see
-[./e.ml](./e.ml).
+E has a tiny and (with the exception of functions) trivial set of expressions
+and types. See [./e.ml](./e.ml).
 
 ## Type checking
 
@@ -21,7 +21,9 @@ let a : Str = "foo" in
 
 let b : Str = "bar" in
 
-a ++ " " ++ b
+let concat_words : Str -> Str -> Str = λ a : Str . λ b : Str . a ++ " " ++ b in
+
+(concat_words a) b
 ```
 
 We can confirm it is well-typed by running the typechecker:

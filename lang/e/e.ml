@@ -6,18 +6,21 @@ module Typ = struct
       | Bot of 'a (* awkward workaround for map *)
       | Num
       | Str
+      | Arr of 'a * 'a
     [@@deriving sexp, fold, eq, map]
 
     let to_string = function
-      | Bot _ -> failwith "impossible"
-      | Num   -> "Num"
-      | Str   -> "Str"
+      | Bot _      -> failwith "impossible"
+      | Num        -> "Num"
+      | Str        -> "Str"
+      | Arr (s, t) -> Printf.sprintf "(%s -> %s)" s t
   end
 
   include Abt.Make (O)
 
   let num = op O.Num
   let str = op O.Str
+  let arr t1 t2 = op (O.Arr (t1, t2))
 end
 
 module Exp = struct
@@ -25,29 +28,36 @@ module Exp = struct
     open Sexplib.Std
 
     type 'a t =
-      | Num of int
-      | Str of string
-      | Plus of 'a * 'a
+      | Num   of int
+      | Str   of string
+      | Plus  of 'a * 'a
       | Times of 'a * 'a
-      | Div of 'a * 'a (* Sec. 6.3: runtime errors *)
-      | Cat of 'a * 'a
-      | Len of 'a
-      | Let of 'a * Typ.t * 'a
+      | Div   of 'a * 'a (* Sec. 6.3: runtime errors *)
+      | Cat   of 'a * 'a
+      | Len   of 'a
+      | Let   of 'a * Typ.t * 'a
+      | Lam   of Typ.t * 'a
+      | App   of 'a * 'a
       | Annot of 'a * Typ.t
       | Error
     [@@deriving sexp, fold, eq, map]
 
+    (* https://stackoverflow.com/questions/33777404/how-to-create-the-lambda-char-in-ocaml *)
+    let lambda = "\xCE\xBB"
+
     let to_string = function
-      | Num n           -> string_of_int n
-      | Str s           -> Printf.sprintf "%S" s
-      | Plus (m, n)     -> Printf.sprintf "(%s + %s)" m n
-      | Times (m, n)    -> Printf.sprintf "(%s * %s)" m n
-      | Div (n, d)      -> Printf.sprintf "(%s / %s)" n d
-      | Cat (s, s')     -> Printf.sprintf "(%s ++ %s)" s s'
-      | Len s           -> Printf.sprintf "len(%s)" s
-      | Let (v, t, bnd) -> Printf.sprintf "let %s : %s =: %s" v (Typ.to_string t) bnd
-      | Annot (e, t)    -> Printf.sprintf "%s : %s" e (Typ.to_string t)
-      | Error           -> Printf.sprintf "error"
+      | Num n               -> string_of_int n
+      | Str s               -> Printf.sprintf "%S" s
+      | Plus (m, n)         -> Printf.sprintf "(%s + %s)" m n
+      | Times (m, n)        -> Printf.sprintf "(%s * %s)" m n
+      | Div (n, d)          -> Printf.sprintf "(%s / %s)" n d
+      | Cat (s, s')         -> Printf.sprintf "(%s ++ %s)" s s'
+      | Len s               -> Printf.sprintf "len(%s)" s
+      | Let (value, t, bnd) -> Printf.sprintf "let %s : %s =: %s" value (Typ.to_string t) bnd
+      | Lam (t, bnd)        -> Printf.sprintf "(%s{%s}%s)" lambda (Typ.to_string t) bnd
+      | App (m, n)          -> Printf.sprintf "(%s %s)" m n
+      | Annot (e, t)        -> Printf.sprintf "%s : %s" e (Typ.to_string t)
+      | Error               -> Printf.sprintf "error"
   end
 
   include Abt.Make (O)
@@ -61,6 +71,8 @@ module Exp = struct
   let cat s s' = op (Cat (s, s'))
   let len s = op (Len s)
   let let_ ~var ~typ ~value exp = op @@ Let (value, typ, var#.exp)
+  let lam ~var ~typ exp = op @@ Lam (typ, var#.exp)
+  let app m n = op @@ App (m, n)
   let annot exp typ = op (Annot (exp, typ))
   let error = op Error
 end
@@ -99,41 +111,55 @@ module Statics = struct
     | exp, _               -> assert_ exp typ
 
   and synthesize : Ctx.t -> Exp.t -> Typ.t =
-   fun ctx -> function
-    | Bnd (_, _) -> failwith "Invalid term"
-    | Var v      -> (
-        try Ctx.find v ctx with
-        | Not_found -> raise (Unbound_var v))
-    | Opr op     ->
-    match op with
-    | Num _ -> Typ.num
-    | Str _ -> Typ.str
-    | Plus (e1, e2)
-    | Times (e1, e2) ->
-        check ctx e1 Typ.num;
-        check ctx e2 Typ.num;
-        Typ.num
-    | Div (e1, e2) ->
-      check ctx e1 Typ.num;
-      check ctx e2 Typ.num;
-      Typ.num
-    | Cat (e1, e2) ->
-        check ctx e1 Typ.str;
-        check ctx e2 Typ.str;
-        Typ.str
-    | Len e ->
-        check ctx e Typ.str;
-        Typ.num
-    | Let (e1, t1, Bnd (bnd, e2)) ->
-        let v = Abt.Var.of_binding bnd in
-        check ctx e1 t1;
-        let ctx' = Ctx.add v t1 ctx in
-        let t2 = synthesize ctx' e2 in
-        check ctx' e2 t2;
-        t2
-    | Annot (e, t) -> check ctx e t; t
-    | Let _ -> failwith "Invalid term"
-    | Error -> Typ.num (* Type here shouldn't matter *)
+    fun ctx -> function
+      | Bnd (_, _) -> failwith "Invalid term: bindings cannot be top-level"
+      | Var v      -> (
+          try Ctx.find v ctx with
+          | Not_found -> raise (Unbound_var v))
+      | Opr op as exp ->
+        match op with
+        | Num _ -> Typ.num
+        | Str _ -> Typ.str
+        | Plus (e1, e2)
+        | Times (e1, e2) ->
+          check ctx e1 Typ.num;
+          check ctx e2 Typ.num;
+          Typ.num
+        | Div (e1, e2) ->
+          check ctx e1 Typ.num;
+          check ctx e2 Typ.num;
+          Typ.num
+        | Cat (e1, e2) ->
+          check ctx e1 Typ.str;
+          check ctx e2 Typ.str;
+          Typ.str
+        | Len e ->
+          check ctx e Typ.str;
+          Typ.num
+        | Let (e1, t1, Bnd (bnd, e2)) ->
+          check ctx e1 t1;
+          let v = Abt.Var.of_binding bnd in
+          let ctx' = Ctx.add v t1 ctx in
+          let t2 = synthesize ctx' e2 in
+          (* TODO can this check be removed?  *)
+          check ctx' e2 t2;
+          t2
+        | Lam (t1, Bnd (bnd, e)) ->
+          (* Ch. 8.2 *)
+          let v = Abt.Var.of_binding bnd in
+          let ctx' = Ctx.add v t1 ctx in
+          let t2 = synthesize ctx' e in
+          Typ.arr t1 t2
+        | Let _ | Lam _ -> failwith "Invalid term: must contain a binding"
+        | Annot (e, t) -> check ctx e t; t
+        | Error -> Typ.num (* Type here shouldn't matter *)
+        | App (e1, e2) ->
+          match synthesize ctx e1 with
+          | Opr (Arr (t2, t)) -> check ctx e2 t2; t
+          | invalid_typ ->
+            let t2 = synthesize ctx e2 in
+            let expected_typ = Typ.(arr t2 (v "b")) in
+            raise (Type_error (ctx, exp, expected_typ, invalid_typ))
 
   (* typechecking succeeds if we can find or construct a type for the expression *)
   let typecheck : Exp.t -> unit =
@@ -155,6 +181,10 @@ module Dynamics = struct
     | Val of Exp.t
     | Err of Exp.t
 
+  let state_to_string = function
+    | Val exp -> Exp.to_string exp
+    | Err exp -> "error: " ^ Exp.to_string exp
+
   exception Illformed of Exp.t
 
   let div n d = match d with
@@ -165,7 +195,7 @@ module Dynamics = struct
     fun exp ->
     match exp with
     | Opr Error -> Err exp
-    | Opr (Num _) | Opr (Str _) -> Val exp
+    | Opr (Num _ | Str _ | Lam _ ) -> Val exp
     (* "For example, the dynamics need not check, when performing an addition,
        that its two argument are, in fact numbers ... because the type system
        ensures that this is the case." (p. 51)  *)
@@ -203,6 +233,11 @@ module Dynamics = struct
         | Val v -> eval (let_ v bnd)
         | err   -> err
       end
+    | Opr (App (lam, e2))    -> begin
+        match eval lam with
+        | Val (Opr (Lam (_, bnd))) -> (match eval e2 with | Val e2' -> eval (app bnd e2') | err -> err)
+        | err -> err
+      end
     | Var v                 -> raise (Statics.Unbound_var v)
     | Bnd (_, _)            -> raise (Illformed exp)
 
@@ -212,6 +247,10 @@ module Dynamics = struct
 
   and let_ value = function
     | Bnd (bnd, exp) -> Exp.subst ~value bnd exp
+    | e              -> raise (Illformed e)
+
+  and app m n = match m with
+    | Bnd (bnd, exp) -> Exp.subst ~value:n bnd exp
     | e              -> raise (Illformed e)
 
   and num e = match eval e with

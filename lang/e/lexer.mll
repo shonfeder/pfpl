@@ -18,25 +18,28 @@ let nl = '\n' | '\r' | "\r\n"
 let id = ['a'-'z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 
 rule read = parse
-  | ws     { read lexbuf }
-  | nl     {next_line lexbuf; read lexbuf}
-  | int    { NUM (int_of_string (lexeme lexbuf)) }
-  | '"'    { read_str (Buffer.create 17) lexbuf }
-  | "("    { OPEN_PAREN }
-  | ")"    { CLOSE_PAREN }
-  | ":"    { ANNOT }
-  | "let"  { LET }
-  | "in"   { IN }
-  | "="    { EQ }
-  | "+"    { PLUS }
-  | "*"    { TIMES }
-  | "++"   { CAT }
-  | "len"  { LEN }
-  | "Num"  { NUM_T }
-  | "Str"  { STR_T }
-  | id     { VAR (lexeme lexbuf) }
-  | _ { raise (SyntaxError ("Unexpected char: " ^ Lexing.lexeme lexbuf)) }
-  | eof    { EOF }
+  | ws         { read lexbuf }
+  | nl         {next_line lexbuf; read lexbuf}
+  | int        { NUM (int_of_string (lexeme lexbuf)) }
+  | '"'        { read_str (Buffer.create 17) lexbuf }
+  | "("        { OPEN_PAREN }
+  | ")"        { CLOSE_PAREN }
+  | ":"        { ANNOT }
+  | "let"      { LET }
+  | "in"       { IN }
+  | "="        { EQ }
+  | "+"        { PLUS }
+  | "*"        { TIMES }
+  | "++"       { CAT }
+  | "len"      { LEN }
+  | "Num"      { NUM_T }
+  | "Str"      { STR_T }
+  | "->"       { ARROW_T }
+  | "."        { POINT }
+  | "λ"        { LAMBDA }
+  | id         { VAR (lexeme lexbuf) }
+  | eof        { EOF }
+  | _          { raise (SyntaxError ("Unexpected char: " ^ Lexing.lexeme lexbuf)) }
 
 and read_str buf = parse
   | '"'       { STR (Buffer.contents buf) }

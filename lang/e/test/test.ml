@@ -24,7 +24,7 @@ let () =
   (* QCheck_runner.set_seed 419048757; *)
   QCheck_runner.run_tests_main
     [ property
-        "Theorm 6.1: Type safety (1) -- If e : τ and e ~> e', then e' : τ"
+        "Theorm 6.1: Type safety (1) (preservation) -- If e : τ and e ~> e', then e' : τ"
         (pair Prog.arbitrary_exp Prog.arbitrary_typ)
         (fun (e, t) ->
           has_type e t
@@ -33,7 +33,7 @@ let () =
           | Val e' | Err e' -> has_type e' t
           | exception Dynamics.Illformed _ -> false)
     ; property
-        "Theorm 6.5: Type safety (2) -- If e : τ, then either e err, or e val, \
+        "Theorm 6.5: Type safety (2) (progress) -- If e : τ, then either e err, or e val, \
          or there exists e' such that e ~> e'"
         (pair Prog.arbitrary_exp Prog.arbitrary_typ)
         (fun (e, t) ->

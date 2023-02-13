@@ -28,17 +28,25 @@ module Prog = struct
   open QCheck.Gen
 
   let exp_var = map Exp.v Var.var_name_gen
-  let typ = oneofl Typ.[ num; str ]
-  let value = oneof
+  let atom = oneof
       [ return Exp.(num 0) (* ensure we always try 0 *)
       ; map Exp.num int
       ; map Exp.str Var.var_name_gen
       ]
 
+  let typ =
+    sized
+    @@ fix (fun self -> function
+         | 0 -> oneofl Typ.[ num; str ]
+         | n ->
+             let n' = n / 2 in
+             map2 Typ.arr (self n') (self n')
+         )
+
   let exp =
     sized
     @@ fix (fun self -> function
-         | 0 -> value
+         | 0 -> atom
          | n ->
              let n' = n / 2 in
              frequency
@@ -48,13 +56,18 @@ module Prog = struct
                ; (1, map2 Exp.cat (self n') (self n'))
                ; (1, map Exp.len (self n'))
                ; (1, return Exp.error)
-               ; ( 1
-                 , fun st ->
-                     Exp.let_
-                       ~var:(Var.var_name_gen st)
-                       ~typ:(typ st)
-                       ~value:(value st)
-                       (self n' st) )
+               ; (1, fun st ->
+                       Exp.let_
+                         ~var:(Var.var_name_gen st)
+                         ~typ:(typ st)
+                         ~value:(self n' st)
+                         (self n' st) )
+               ; (1, fun st ->
+                       Exp.lam
+                         ~var:(Var.var_name_gen st)
+                         ~typ:(typ st)
+                         (self n' st) )
+               ; (1, map2 Exp.app (self n') (self n'))
                ; (1, map2 Exp.annot (self n') typ)
                ])
 

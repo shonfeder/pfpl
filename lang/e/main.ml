@@ -48,7 +48,12 @@ let parse () =
 
 let eval progn =
   let () = typecheck_with_error progn in
-  E.Dynamics.(eval progn) |> E.Exp.to_string |> print_endline
+  let res =
+    try E.Dynamics.eval progn with
+    | E.Dynamics.Illformed exp -> Printf.printf "internal error: illformed exp `%s`" (E.Exp.to_string exp); exit 1
+    | _ -> print_endline "fooo!"; exit 1
+  in
+  res |> E.Dynamics.state_to_string |> print_endline
 
 let () =
   match Sys.argv.(1) with

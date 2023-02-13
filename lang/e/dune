@@ -16,6 +16,8 @@
 
 (mdx
  (files README.md)
- (deps ill_typed_ex.e well_typed_ex.e))
+ (deps %{bin:e}
+       ill_typed_ex.e
+       well_typed_ex.e))
 
 (ocamllex lexer)
